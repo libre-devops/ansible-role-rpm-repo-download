@@ -1,0 +1,33 @@
+---
+- name: Latest versions from two repositories signed with different keys
+  hosts: all
+  gather_facts: false
+  vars:
+    rpm_repo_download_repositories:
+      - path: rhel/9/prod
+        label: rhel9
+      - path: rhel/10/prod
+        label: rhel10
+    rpm_repo_download_packages:
+      - aadsshlogin-selinux
+      - packages-microsoft-prod
+    rpm_repo_download_arches: [x86_64, noarch]
+    rpm_repo_download_dest: "{{ lookup('ansible.builtin.env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/downloads/latest"
+    rpm_repo_download_manifest: "{{ lookup('ansible.builtin.env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/downloads/latest.json"
+  roles:
+    - role: libre_devops.rpm_repo_download
+
+- name: An exact older version, label from the path
+  hosts: all
+  gather_facts: false
+  vars:
+    rpm_repo_download_repositories:
+      - path: rhel/9/prod
+    rpm_repo_download_packages:
+      - dotnet-runtime-deps-6.0
+    rpm_repo_download_version:
+      dotnet-runtime-deps-6.0: 6.0.25
+    rpm_repo_download_dest: "{{ lookup('ansible.builtin.env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/downloads/exact"
+    rpm_repo_download_manifest: "{{ lookup('ansible.builtin.env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/downloads/exact.json"
+  roles:
+    - role: libre_devops.rpm_repo_download

@@ -1,0 +1,114 @@
+---
+- name: Check the variables
+  vars:
+    __rpm_repo_download_labels: "{{ __rpm_repo_download_labels_json | from_json }}"
+  ansible.builtin.assert:
+    that:
+      - rpm_repo_download_repositories | length > 0
+      - rpm_repo_download_packages | length > 0
+      - rpm_repo_download_dest | length > 0
+      - __rpm_repo_download_labels | unique | length == __rpm_repo_download_labels | length
+      - not rpm_repo_download_verify_signature or rpm_repo_download_gpg_keys | length > 0
+    fail_msg: >-
+      Give at least one repository and one package, a download directory, a different label
+      for each repository ({{ __rpm_repo_download_labels | join(', ') }}), and at least one key
+      when rpm_repo_download_verify_signature is true.
+    quiet: true
+
+# The key files are read on the control node (from this role's files/ first), so the role
+# works wherever it runs.
+- name: Read each signing key
+  ansible.builtin.set_fact:
+    __rpm_repo_download_keys: >-
+      {{ (__rpm_repo_download_keys | default([]) if ansible_loop.index > 1 else [])
+         + [{'content': lookup('ansible.builtin.file', item.file), 'fingerprint': item.fingerprint}] }}
+  loop: "{{ rpm_repo_download_gpg_keys if rpm_repo_download_verify_signature else [] }}"
+  loop_control:
+    extended: true
+    label: "{{ item.file }}"
+
+# rpm_repo_query is this role's own module, in library/. It only reads metadata.
+- name: Find the packages in the signed repository metadata
+  rpm_repo_query:  # noqa: fqcn[action]
+    base_url: "{{ rpm_repo_download_base_url }}"
+    repositories: "{{ rpm_repo_download_repositories }}"
+    packages: "{{ rpm_repo_download_packages }}"
+    version: "{{ rpm_repo_download_version }}"
+    arches: "{{ rpm_repo_download_arches }}"
+    keys: "{{ __rpm_repo_download_keys | default([]) }}"
+    verify_signature: "{{ rpm_repo_download_verify_signature }}"
+    validate_certs: "{{ rpm_repo_download_validate_certs }}"
+    timeout: "{{ rpm_repo_download_timeout }}"
+  register: __rpm_repo_download_query
+
+# Check mode reads metadata only: it compares what is already on disk with the signed
+# checksums and says what a real run would download.
+- name: Download the packages
+  when: not ansible_check_mode
+  block:
+    - name: Create the download directories
+      ansible.builtin.file:
+        path: "{{ rpm_repo_download_dest | regex_replace('/+$', '') }}/{{ item }}"
+        state: directory
+        mode: "0755"
+      loop: "{{ __rpm_repo_download_query.packages | map(attribute='label') | unique }}"
+
+    # The checksum comes from the signed metadata, so a file already there with the right
+    # checksum is not downloaded again, and a wrong one is replaced.
+    - name: Download each package
+      ansible.builtin.get_url:
+        url: "{{ item.url }}"
+        dest: "{{ rpm_repo_download_dest | regex_replace('/+$', '') }}/{{ item.label }}/{{ item.filename }}"
+        checksum: "{{ __rpm_repo_download_checksum_names[item.checksum_type] | default(item.checksum_type) }}:{{ item.checksum }}"
+        mode: "0644"
+        timeout: "{{ rpm_repo_download_timeout }}"
+        validate_certs: "{{ rpm_repo_download_validate_certs }}"
+      loop: "{{ __rpm_repo_download_query.packages }}"
+      loop_control:
+        label: "{{ item.label }}/{{ item.filename }}"
+
+- name: Say what a real run would download
+  when: ansible_check_mode
+  block:
+    - name: Read the files already in place
+      ansible.builtin.stat:
+        path: "{{ rpm_repo_download_dest | regex_replace('/+$', '') }}/{{ item.label }}/{{ item.filename }}"
+        checksum_algorithm: "{{ __rpm_repo_download_checksum_names[item.checksum_type] | default(item.checksum_type) }}"
+      register: __rpm_repo_download_existing
+      loop: "{{ __rpm_repo_download_query.packages }}"
+      loop_control:
+        label: "{{ item.label }}/{{ item.filename }}"
+
+    # Reported as changed when something would be downloaded, as check mode should.
+    - name: List the downloads a real run would make
+      vars:
+        __rpm_repo_download_pending: "{{ __rpm_repo_download_pending_json | from_json }}"
+      ansible.builtin.debug:
+        msg: >-
+          {{ ('Would download: ' ~ (__rpm_repo_download_pending | join(', ')))
+             if __rpm_repo_download_pending | length > 0 else 'Every package is already downloaded.' }}
+      changed_when: __rpm_repo_download_pending | length > 0
+
+- name: Keep what was downloaded as a fact
+  ansible.builtin.set_fact:
+    rpm_repo_download_results: "{{ __rpm_repo_download_results_json | from_json }}"
+
+- name: Write the manifest
+  when:
+    - rpm_repo_download_manifest | length > 0
+    - not ansible_check_mode
+  block:
+    - name: Create the manifest directory
+      ansible.builtin.file:
+        path: "{{ rpm_repo_download_manifest | dirname }}"
+        state: directory
+        mode: "0755"
+      when: rpm_repo_download_manifest | dirname | length > 0
+
+    - name: Write the manifest
+      ansible.builtin.copy:
+        content: >-
+          {{ {'repositories': __rpm_repo_download_query.repositories, 'packages': rpm_repo_download_results}
+             | to_nice_json(indent=2) }}
+        dest: "{{ rpm_repo_download_manifest }}"
+        mode: "0644"

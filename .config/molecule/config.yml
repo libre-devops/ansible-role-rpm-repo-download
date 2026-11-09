@@ -1,0 +1,25 @@
+---
+# The role runs on the control node, so the scenarios run against localhost: no containers,
+# no create or destroy. They download real, small packages from packages.microsoft.com.
+driver:
+  name: default
+  options:
+    managed: false
+
+platforms:
+  - name: localhost
+
+provisioner:
+  name: ansible
+  config_options:
+    defaults:
+      callback_result_format: yaml
+      interpreter_python: auto_silent
+  inventory:
+    host_vars:
+      localhost:
+        ansible_connection: local
+        ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+verifier:
+  name: ansible

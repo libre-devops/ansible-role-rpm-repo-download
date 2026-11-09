@@ -1,0 +1,15 @@
+# Python and tooling
+.venv/
+__pycache__/
+.pytest_cache/
+.cache/
+.ansible/
+*.retry
+
+# Editors
+.idea/
+.vscode/
+
+# Downloads from running the examples. Never commit packages.
+downloads/
+*.rpm

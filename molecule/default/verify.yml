@@ -1,0 +1,51 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  vars:
+    downloads: "{{ lookup('ansible.builtin.env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/downloads"
+  tasks:
+    - name: Read the manifests
+      ansible.builtin.set_fact:
+        latest: "{{ lookup('ansible.builtin.file', downloads ~ '/latest.json') | from_json }}"
+        exact: "{{ lookup('ansible.builtin.file', downloads ~ '/exact.json') | from_json }}"
+
+    - name: Check each repository was verified with the right Microsoft key
+      ansible.builtin.assert:
+        that:
+          - latest.repositories | selectattr('label', 'equalto', 'rhel9') | map(attribute='signed_by') | first
+            == 'BC528686B50D79E339D3721CEB3E94ADBE1229CF'
+          - latest.repositories | selectattr('label', 'equalto', 'rhel10') | map(attribute='signed_by') | first
+            == 'AA86F75E427A19DD33346403EE4D7792F748182B'
+        quiet: true
+
+    - name: Check one file per repository and package, noarch included
+      ansible.builtin.assert:
+        that:
+          - latest.packages | length == 4
+          - latest.packages | selectattr('name', 'equalto', 'packages-microsoft-prod') | map(attribute='arch') | unique == ['noarch']
+          - exact.packages | length == 1
+          - exact.packages[0].evr == '6.0.25-1'
+          - exact.packages[0].label == 'rhel-9-prod'
+        quiet: true
+
+    - name: Read each download's checksum
+      ansible.builtin.stat:
+        path: "{{ item.path }}"
+        checksum_algorithm: sha256
+      register: __verify_files
+      loop: "{{ latest.packages + exact.packages }}"
+      loop_control:
+        label: "{{ item.label }}/{{ item.filename }}"
+
+    - name: Check every file matches the checksum in the signed metadata
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.item.checksum_type == 'sha256'
+          - item.stat.checksum == item.item.checksum
+          - item.stat.size == item.item.size
+        quiet: true
+      loop: "{{ __verify_files.results }}"
+      loop_control:
+        label: "{{ item.item.label }}/{{ item.item.filename }}"

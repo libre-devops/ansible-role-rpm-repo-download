@@ -1,0 +1,33 @@
+---
+galaxy_info:
+  namespace: libre_devops
+  role_name: rpm_repo_download
+  author: Craig Thacker
+  company: Libre DevOps
+  description: >-
+    Download RPMs from a yum or dnf repository, packages.microsoft.com by default, choosing the
+    version from the repository metadata and proving every file with the repository's signature
+    and checksums
+  license: MIT
+  min_ansible_version: "2.16"
+  issue_tracker_url: https://github.com/libre-devops/ansible-role-rpm-repo-download/issues
+  platforms:
+    - name: EL
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - all
+    - name: Ubuntu
+      versions:
+        - all
+  galaxy_tags:
+    - rpm
+    - yum
+    - dnf
+    - repository
+    - mirror
+    - microsoft
+    - satellite
+
+dependencies: []

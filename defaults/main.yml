@@ -1,0 +1,48 @@
+---
+# Every variable is described in README.md and validated by meta/argument_specs.yml.
+
+# Where the repositories are. packages.microsoft.com by default, but any yum or dnf
+# repository with signed metadata works.
+rpm_repo_download_base_url: https://packages.microsoft.com
+
+# The repositories to download from. Each has a path under the base URL, and optionally a
+# label (the download subdirectory, by default the path with slashes as hyphens) and a
+# base_url of its own.
+rpm_repo_download_repositories:
+  - path: rhel/9/prod
+
+# Package names to download from every repository.
+rpm_repo_download_packages:
+  - mdatp
+
+# latest, or an exact version (101.25092.0005), version-release (101.25092.0005-1) or
+# epoch:version-release. A dictionary of package name to version sets it per package.
+rpm_repo_download_version: latest
+
+# Architectures to accept. Add noarch for packages built without one.
+rpm_repo_download_arches:
+  - x86_64
+
+# Where the files go: one subdirectory per repository label.
+rpm_repo_download_dest: "{{ playbook_dir }}/downloads"
+
+# Keys trusted to sign the repository metadata. file is looked up on the control node, in
+# this role's files/ directory first. Microsoft signs older repositories with microsoft.asc
+# and newer ones (RHEL 10, SLES 16, Debian 13, Ubuntu 26.04) with microsoft-2025.asc.
+rpm_repo_download_gpg_keys:
+  - file: microsoft.asc
+    fingerprint: BC528686B50D79E339D3721CEB3E94ADBE1229CF
+  - file: microsoft-2025.asc
+    fingerprint: AA86F75E427A19DD33346403EE4D7792F748182B
+
+# Check the signature on repomd.xml. Turning it off removes the proof that the package
+# checksums come from the repository owner.
+rpm_repo_download_verify_signature: true
+
+rpm_repo_download_validate_certs: true
+
+# Seconds to wait for each metadata file and each package.
+rpm_repo_download_timeout: 600
+
+# Write a JSON manifest of what was chosen and downloaded to this path. Empty writes none.
+rpm_repo_download_manifest: ""

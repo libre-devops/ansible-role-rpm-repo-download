@@ -1,0 +1,35 @@
+---
+# Internal values. Not meant to be overridden.
+
+# Each repository's label, as JSON: the one given, or the path with slashes as hyphens. The
+# module works it out the same way.
+__rpm_repo_download_labels_json: >-
+  {%- set acc = namespace(found=[]) -%}
+  {%- for repository in rpm_repo_download_repositories -%}
+  {%- set acc.found = acc.found + [repository.label | default('', true)
+        or (repository.path | regex_replace('^/+|/+$', '') | replace('/', '-'))] -%}
+  {%- endfor -%}
+  {{ acc.found | to_json }}
+
+# get_url names SHA-1 "sha1"; repository metadata may call it "sha".
+__rpm_repo_download_checksum_names:
+  sha: sha1
+
+# The selected packages with the local path of each download, as JSON.
+__rpm_repo_download_results_json: >-
+  {%- set acc = namespace(found=[]) -%}
+  {%- for package in __rpm_repo_download_query.packages | default([]) -%}
+  {%- set path = (rpm_repo_download_dest | regex_replace('/+$', '')) ~ '/' ~ package.label ~ '/' ~ package.filename -%}
+  {%- set acc.found = acc.found + [package | combine({'path': path})] -%}
+  {%- endfor -%}
+  {{ acc.found | to_json }}
+
+# Check mode: the downloads whose file is missing or has a different checksum, as JSON.
+__rpm_repo_download_pending_json: >-
+  {%- set acc = namespace(found=[]) -%}
+  {%- for result in __rpm_repo_download_existing.results | default([]) -%}
+  {%- if not result.stat.exists or result.stat.checksum | default('') != result.item.checksum -%}
+  {%- set acc.found = acc.found + [result.item.label ~ '/' ~ result.item.filename] -%}
+  {%- endif -%}
+  {%- endfor -%}
+  {{ acc.found | to_json }}

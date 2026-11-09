@@ -1,0 +1,6 @@
+---
+blank_issues_enabled: false
+contact_links:
+  - name: createrepo_c and repository metadata
+    url: https://github.com/rpm-software-management/createrepo_c
+    about: How yum and dnf repository metadata is laid out.

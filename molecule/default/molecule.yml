@@ -1,0 +1,14 @@
+---
+# Downloads small packages from RHEL 9 (signed with Microsoft's original key) and RHEL 10
+# (signed with its 2025 key), latest and noarch included, then an exact older version, and
+# checks the files against the signed checksums. A check-mode run first must download
+# nothing, and the second converge must change nothing.
+scenario:
+  test_sequence:
+    - syntax
+    - prepare
+    - check
+    - converge
+    - idempotence
+    - verify
+    - cleanup

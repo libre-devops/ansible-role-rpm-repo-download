@@ -1,0 +1,28 @@
+---
+# Example used by `just live`: download the newest mdatp for RHEL 7, 8 and 9 into
+# ./downloads/<label>/ on the control node, with a manifest of what was chosen.
+#
+#   just live
+#   just live -e '{"rpm_repo_download_version": "101.25092.0005"}'
+- name: Download the newest mdatp for each RHEL release
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    rpm_repo_download_repositories:
+      - path: rhel/7/prod
+        label: rhel7
+      - path: rhel/8/prod
+        label: rhel8
+      - path: rhel/9/prod
+        label: rhel9
+    rpm_repo_download_packages:
+      - mdatp
+    rpm_repo_download_manifest: "{{ playbook_dir }}/downloads/manifest.json"
+  roles:
+    - role: libre_devops.rpm_repo_download
+
+  post_tasks:
+    - name: Show what was downloaded
+      ansible.builtin.debug:
+        msg: "{{ rpm_repo_download_results | map(attribute='label') | zip(rpm_repo_download_results | map(attribute='nevra')) | map('join', ': ') | list }}"

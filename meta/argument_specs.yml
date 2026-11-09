@@ -1,0 +1,93 @@
+---
+argument_specs:
+  main:
+    short_description: Download RPMs from a yum or dnf repository, verified against its signature
+    description:
+      - Reads each repository's repodata/repomd.xml, checks its signature against the given
+        public keys only, and checks the primary metadata against the checksum repomd.xml gives.
+      - Chooses the newest version of each package (RPM ordering, epoch included), or the exact
+        version asked for, and downloads it with the checksum from the signed metadata, so every
+        file is proven to be the one the repository owner published.
+      - Runs on the host it is applied to, normally the control node (hosts localhost).
+    author:
+      - Craig Thacker
+    options:
+      rpm_repo_download_base_url:
+        description: Base URL the repository paths are relative to.
+        type: str
+        default: https://packages.microsoft.com
+      rpm_repo_download_repositories:
+        description: The repositories to download from.
+        type: list
+        elements: dict
+        default:
+          - path: rhel/9/prod
+        options:
+          path:
+            description: Path of the repository under the base URL, such as rhel/9/prod.
+            type: str
+            required: true
+          label:
+            description: Download subdirectory for this repository. Defaults to the path with slashes replaced by hyphens.
+            type: str
+          base_url:
+            description: A different base URL for this repository only.
+            type: str
+      rpm_repo_download_packages:
+        description: Package names to download from every repository.
+        type: list
+        elements: str
+        default: [mdatp]
+      rpm_repo_download_version:
+        description:
+          - latest, or an exact version, version-release or epoch:version-release.
+          - A dictionary of package name to version sets it per package. Packages missing from
+            the dictionary get latest.
+        type: raw
+        default: latest
+      rpm_repo_download_arches:
+        description: Architectures to accept. Add noarch for packages built without one.
+        type: list
+        elements: str
+        default: [x86_64]
+      rpm_repo_download_dest:
+        description: Directory for the downloads, on the host the role runs on. Each repository gets a subdirectory named after its label.
+        type: str
+        default: "{{ playbook_dir }}/downloads"
+      rpm_repo_download_gpg_keys:
+        description:
+          - Public keys trusted to sign the repository metadata. file is read on the control
+            node, from this role's files/ directory first. A signature only counts when it is
+            from one of these fingerprints, and each file must contain its fingerprint.
+        type: list
+        elements: dict
+        default:
+          - file: microsoft.asc
+            fingerprint: BC528686B50D79E339D3721CEB3E94ADBE1229CF
+          - file: microsoft-2025.asc
+            fingerprint: AA86F75E427A19DD33346403EE4D7792F748182B
+        options:
+          file:
+            description: Path of the ASCII-armoured public key on the control node.
+            type: str
+            required: true
+          fingerprint:
+            description: The key's full fingerprint.
+            type: str
+            required: true
+      rpm_repo_download_verify_signature:
+        description: Check the signature on repomd.xml. Turning it off removes the proof that the package checksums come from the repository owner.
+        type: bool
+        default: true
+      rpm_repo_download_validate_certs:
+        description: Check TLS certificates.
+        type: bool
+        default: true
+      rpm_repo_download_timeout:
+        description: Seconds to wait for each metadata file and each package download.
+        type: int
+        default: 600
+      rpm_repo_download_manifest:
+        description: Path for a JSON manifest of the repositories read and the packages downloaded. Empty writes none.
+        type: str
+        default: ""
