@@ -4,16 +4,7 @@ Notable changes to this role. The format follows [Keep a Changelog](https://keep
 
 ## Unreleased
 
-### Added
-
-- `docs/using-without-galaxy.md`, linked from the README's Installation section: installing the role without Galaxy (git, release archives, requirements files that name their own source), getting its collections with no Galaxy access, keeping a copy on your own git server or artifact store, AWX, Automation Controller and execution environments, and the ansible-core and Python versions it needs.
-
-### Changed
-
-- The Release workflow imports the release's own tag into Galaxy, rather than the default branch, and can be run by hand with a tag to import that tag again.
-- The Release workflow imports through Galaxy's API (`scripts/galaxy-import.py`) instead of `ansible-galaxy role import`, which fails with HTTP 500 because the Galaxy namespace `libre_devops` differs from the GitHub organisation `libre-devops`. It then points the role's download links at the `libre-devops` repository and installs the tag from Galaxy to check.
-
-## 1.0.0 - 2026-11-11
+## 1.0.0 - 2026-11-12
 
 ### Added
 
@@ -24,3 +15,4 @@ Notable changes to this role. The format follows [Keep a Changelog](https://keep
 - Check mode that reads metadata only and lists what a real run would download.
 - Microsoft's two signing keys bundled, checked by fingerprint in CI.
 - Unit tests, with the version ordering checked against rpm itself, and a Molecule scenario that downloads small packages from packages.microsoft.com.
+- `docs/using-without-galaxy.md`, linked from the README's Installation section: installing the role without Galaxy (git, release archives, requirements files that name their own source), getting its collections with no Galaxy access, keeping a copy on your own git server or artifact store, AWX, Automation Controller and execution environments, and the ansible-core and Python versions it needs.
