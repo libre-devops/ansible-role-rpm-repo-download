@@ -13,7 +13,7 @@ Downloads RPMs from a yum or dnf repository, packages.microsoft.com by default. 
 
 [![CI](https://github.com/libre-devops/ansible-role-rpm-repo-download/actions/workflows/ci.yml/badge.svg)](https://github.com/libre-devops/ansible-role-rpm-repo-download/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/libre-devops/ansible-role-rpm-repo-download?sort=semver&label=release)](https://github.com/libre-devops/ansible-role-rpm-repo-download/releases/latest)
-[![Galaxy](https://img.shields.io/badge/galaxy-libre__devops.rpm__repo__download-EE0000?logo=ansible&logoColor=white)](https://galaxy.ansible.com/ui/standalone/roles/libre_devops/rpm_repo_download/)
+[![Galaxy](https://img.shields.io/badge/galaxy-libre__devops.rpm__repo__download-EE0000?logo=ansible&logoColor=white)](https://galaxy.ansible.com/ui/standalone/roles/libre_devops/rpm_repo_download/documentation/)
 [![Licence](https://img.shields.io/github/license/libre-devops/ansible-role-rpm-repo-download)](./LICENSE)
 
 ---
